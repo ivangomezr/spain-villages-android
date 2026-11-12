@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.recyclerview.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rvcomunidades"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#3E51B5"
+    tools:context=".views.MainActivity">
+
+</androidx.recyclerview.widget.RecyclerView>
