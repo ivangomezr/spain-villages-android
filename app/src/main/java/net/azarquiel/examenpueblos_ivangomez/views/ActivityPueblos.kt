@@ -27,7 +27,8 @@ import net.azarquiel.examenpueblos_ivangomez.viewmodel.PuebloViewModel
 class ActivityPueblos : AppCompatActivity(), SearchView.OnQueryTextListener {
 
     private lateinit var binding: ActivityPueblosBinding
-    private lateinit var pueblosAL : List<PuebloView>
+    private var pueblosAL: List<PuebloView> = emptyList()
+    private var currentQuery = ""
     private lateinit var comunidad: Comunidad
     private lateinit var adapter : CustomAdapterPueblos
     private lateinit var puebloViewModel : PuebloViewModel
@@ -60,16 +61,15 @@ class ActivityPueblos : AppCompatActivity(), SearchView.OnQueryTextListener {
     }
 
     private fun getPueblos() {
-        comunidad.id?.let {
-            puebloViewModel.getPueblosByComunidad(it).observe(this, Observer { pueblos ->
-                // Update the cached copy of the products in the adapter.
-                pueblos?.let {
-                    for(pueblo in it) {
-                        pueblosAL = it
-                        showPueblos()
-                    }
-                }
-            })
+        comunidad.id?.let { id ->
+            puebloViewModel.getPueblosByComunidad(id).removeObservers(this)
+            puebloViewModel.getPueblosByComunidadAndFav(id).removeObservers(this)
+            val source = if (fav) puebloViewModel.getPueblosByComunidadAndFav(id)
+            else puebloViewModel.getPueblosByComunidad(id)
+            source.observe(this) { pueblos ->
+                pueblosAL = pueblos ?: emptyList()
+                showPueblos()
+            }
         }
     }
 
@@ -88,7 +88,11 @@ class ActivityPueblos : AppCompatActivity(), SearchView.OnQueryTextListener {
     }
 
     private fun showPueblos() {
-        adapter.setPueblos(pueblosAL)
+        val q = currentQuery.trim().lowercase()
+        adapter.setPueblos(
+            if (q.isEmpty()) pueblosAL
+            else pueblosAL.filter { it.nombre.lowercase().contains(q) }
+        )
     }
 
     fun OnClickPueblo(v: View) {
@@ -100,14 +104,11 @@ class ActivityPueblos : AppCompatActivity(), SearchView.OnQueryTextListener {
     }
 
     private fun onClickFav() {
-        if(!fav) {
-            binding.fab.setImageResource(android.R.drawable.star_big_on)
-            getPueblosFav()
-        } else {
-            binding.fab.setImageResource(android.R.drawable.star_big_off)
-            getPueblos()
-        }
         fav = !fav
+        binding.fab.setImageResource(
+            if (fav) android.R.drawable.star_big_on else android.R.drawable.star_big_off
+        )
+        getPueblos()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -122,12 +123,13 @@ class ActivityPueblos : AppCompatActivity(), SearchView.OnQueryTextListener {
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean {
-        return false
+        searchView.clearFocus()   // oculta el teclado al pulsar "buscar"
+        return true
     }
 
     override fun onQueryTextChange(query: String?): Boolean {
-        val original = ArrayList<PuebloView>(pueblosAL)
-        adapter.setPueblos(original.filter { pueblo -> pueblo.nombre.lowercase().startsWith(query!!) })
-        return false
+        currentQuery = query.orEmpty()
+        showPueblos()
+        return true
     }
 }
